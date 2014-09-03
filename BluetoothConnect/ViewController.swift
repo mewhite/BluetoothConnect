@@ -8,13 +8,34 @@
 
 import UIKit
 
-class ViewController: UIViewController {
-                            
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
+import CoreBluetooth
 
+
+class ViewController: UIViewController, PostureSenseDriverDelegate {
+    
+    var myPostureSenseDriver = PostureSenseDriver()
+    
+    
+    override func viewDidLoad()
+    {
+        super.viewDidLoad()
+        
+        myPostureSenseDriver.delegateCentralManager()
+    
+    }
+    
+    func didChangeStatus()
+    {
+        println("view controller: posture sensor didChangeStatus")
+    }
+    
+    func didReceiveData(data: NSData!)
+    {
+        println("received data!: \(data)")
+    
+    }
+        
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.

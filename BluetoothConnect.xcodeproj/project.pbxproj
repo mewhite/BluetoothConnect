@@ -12,6 +12,8 @@
 		2A4C38CA199D557F00FB3F6E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38C8199D557F00FB3F6E /* Main.storyboard */; };
 		2A4C38CC199D557F00FB3F6E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38CB199D557F00FB3F6E /* Images.xcassets */; };
 		2A4C38D8199D557F00FB3F6E /* BluetoothConnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */; };
+		2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */; };
+		2ACF316219B6420A00BF8203 /* PostureSenseDriverDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACF316119B6420A00BF8203 /* PostureSenseDriverDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +36,8 @@
 		2A4C38D1199D557F00FB3F6E /* BluetoothConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A4C38D6199D557F00FB3F6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothConnectTests.swift; sourceTree = "<group>"; };
+		2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureSenseDriver.swift; sourceTree = "<group>"; };
+		2ACF316119B6420A00BF8203 /* PostureSenseDriverDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureSenseDriverDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +81,8 @@
 			children = (
 				2A4C38C4199D557F00FB3F6E /* AppDelegate.swift */,
 				2A4C38C6199D557F00FB3F6E /* ViewController.swift */,
+				2ACF316119B6420A00BF8203 /* PostureSenseDriverDelegate.swift */,
+				2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */,
 				2A4C38C8199D557F00FB3F6E /* Main.storyboard */,
 				2A4C38CB199D557F00FB3F6E /* Images.xcassets */,
 				2A4C38C2199D557F00FB3F6E /* Supporting Files */,
@@ -208,8 +214,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2ACF316219B6420A00BF8203 /* PostureSenseDriverDelegate.swift in Sources */,
 				2A4C38C7199D557F00FB3F6E /* ViewController.swift in Sources */,
 				2A4C38C5199D557F00FB3F6E /* AppDelegate.swift in Sources */,
+				2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,6 +403,7 @@
 				2A4C38DD199D557F00FB3F6E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2A4C38DE199D557F00FB3F6E /* Build configuration list for PBXNativeTarget "BluetoothConnectTests" */ = {
 			isa = XCConfigurationList;
@@ -403,6 +412,7 @@
 				2A4C38E0199D557F00FB3F6E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
