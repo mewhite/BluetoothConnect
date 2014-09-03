@@ -13,23 +13,43 @@ import CoreBluetooth
 
 class ViewController: UIViewController, PostureSenseDriverDelegate {
     
-    var myPostureSenseDriver = PostureSenseDriver()
+    var myPostureSenseDriver: PostureSenseDriver? = nil
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        myPostureSenseDriver.delegateCentralManager()
+        myPostureSenseDriver = PostureSenseDriver(delegate: self)
     }
     
     func didChangeStatus(status: PostureSenseStatus)
     {
-        println("view controller: posture sensor didChangeStatus")
-        println(status)
+        printStatus(status)
+    }
+    
+    func printStatus(status: PostureSenseStatus)
+    {
+        switch status
+        {
+        case PostureSenseStatus.PoweredOff: println("PoweredOff")
+        case PostureSenseStatus.Searching: println("Searching")
+        case PostureSenseStatus.Connecting: println("Connecting")
+        case PostureSenseStatus.Disconnected: println("Disconnected")
+        case PostureSenseStatus.Callibrating: println("Callibrating")
+        case PostureSenseStatus.Registering: println("Registering")
+        case PostureSenseStatus.LiveUpdates: println("LiveUpdates")
+        case PostureSenseStatus.Disengaging: println("Disengaging")
+        case PostureSenseStatus.Unknown: println("Unknown")
+        case PostureSenseStatus.Resetting: println("Resetting")
+        case PostureSenseStatus.Unauthorized: println("Unauthorized")
+        case PostureSenseStatus.Unsupported: println("Unsupported")
+        case PostureSenseStatus.PoweredOn: println("PoweredOn")
+            
+        }
     }
     
     func didReceiveData(data: NSData!)
     {
-        println("received data!: \(data)")
+        println("Received Data: \(data)")
     }
         
     
@@ -37,6 +57,7 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
 
 }
 
