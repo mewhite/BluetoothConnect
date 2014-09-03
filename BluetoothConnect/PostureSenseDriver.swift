@@ -10,6 +10,21 @@
 import Foundation
 import CoreBluetooth
 
+enum PostureSenseStatus {
+    case PoweredOff
+    case Searching
+    case Connecting
+    case Callibrating
+    case Registering
+    case LiveUpdates
+    case Disconnecting
+}
+
+protocol PostureSenseDriverDelegate
+{
+    func didChangeStatus(status: PostureSenseStatus)
+    func didReceiveData(data: NSData!)
+}
 
 class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     
@@ -22,22 +37,17 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     func delegateCentralManager()
     {
         myCentralManager = CBCentralManager(delegate:self, queue:dispatch_queue_create(nil, nil))
-        myPostureSenseDriverDelegate = ViewController()
-    
     }
-
-    
     
     //CENTRAL MANAGER DELEGATE FUNCTIONS
     
     func centralManagerDidUpdateState(central: CBCentralManager!)
     {
-        printCentralState(central.state)
+        //printCentralState(central.state)
+        //TODO: check which state its in and scan/act accordingly
         var uuids: [CBUUID] = [CBUUID.UUIDWithString("1800"), CBUUID.UUIDWithString("180A"), CBUUID.UUIDWithString("180F"), CBUUID.UUIDWithString("D6E8F230-1513-11E4-8C21-0800200C9A66")]
         central.scanForPeripheralsWithServices(uuids, options:nil)
-        
-        myPostureSenseDriverDelegate!.didChangeStatus()
-        
+        myPostureSenseDriverDelegate?.didChangeStatus(.Searching)
     }
     
     func centralManager(central: CBCentralManager!,
@@ -48,6 +58,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         central.stopScan()
         self.myPeripheral = peripheral
         myCentralManager!.connectPeripheral(peripheral, options: nil)
+        myPostureSenseDriverDelegate?.didChangeStatus(.Connecting)
         //myCentralManager!.connectPeripheral(peripheral, options: [CBConnectPeripheralOptionNotifyOnConnectionKey: NSString()])
         //TODO: see options documentation and learn how to actually write them.
         //TODO: stop scanning when done / found last peripheral needed, not immediately
@@ -81,7 +92,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didRetrievePeripherals peripherals: [AnyObject]!)
     {
         println("didRetrievePeripherals")
-        
     }
     
     func centralManager(central: CBCentralManager!,
@@ -94,7 +104,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     {
         var stateName: String
         switch centralState
-            {
+        {
         case CBCentralManagerState.Unknown: stateName = "unknown"
         case CBCentralManagerState.Resetting: stateName = "resetting"
         case CBCentralManagerState.Unsupported: stateName = "unsupported"
@@ -104,7 +114,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
         println("Central State = \(stateName)")
     }
-    
     
     //PERIPHERAL DELEGATE FUNCTIONS
     
@@ -127,14 +136,12 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         for characteristic in service.characteristics as [CBCharacteristic]
         {
             //println("CHARACTERISTIC NAME" + (characteristic.UUID.UUIDString))
-
-           // println("CHARACTERISTIC NAME" + (CBUUID.UUIDWithString(characteristic.UUID)).UUIDString)
+            // println("CHARACTERISTIC NAME" + (CBUUID.UUIDWithString(characteristic.UUID)).UUIDString)
             if (characteristic.UUID.UUIDString == "D6E91941-1513-11E4-8C21-0800200C9A66")
             {
                 println("CHARACTERISTIC NAME" + (characteristic.UUID.UUIDString))
                 peripheral.setNotifyValue(true, forCharacteristic: characteristic)
             }
-            
         }
     }
     
@@ -158,7 +165,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        
         println("Updated value for characteristic: \(characteristic) in peripheral \(peripheral.name)")
         let data = ("My Personal Characteristic Data" as NSString).dataUsingEncoding(NSUTF8StringEncoding)
         //TODO: fix error message...unidentifier???

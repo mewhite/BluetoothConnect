@@ -15,24 +15,21 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     
     var myPostureSenseDriver = PostureSenseDriver()
     
-    
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        
         myPostureSenseDriver.delegateCentralManager()
-    
     }
     
-    func didChangeStatus()
+    func didChangeStatus(status: PostureSenseStatus)
     {
         println("view controller: posture sensor didChangeStatus")
+        println(status)
     }
     
     func didReceiveData(data: NSData!)
     {
         println("received data!: \(data)")
-    
     }
         
     
@@ -40,7 +37,6 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
 
 }
 

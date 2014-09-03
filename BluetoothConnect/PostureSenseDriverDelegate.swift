@@ -10,9 +10,6 @@ import Foundation
 
 protocol PostureSenseDriverDelegate
 {
-    
     func didChangeStatus()
-
     func didReceiveData(data: NSData!)
-
 }
