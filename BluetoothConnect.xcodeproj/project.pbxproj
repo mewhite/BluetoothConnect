@@ -35,7 +35,7 @@
 		2A4C38D1199D557F00FB3F6E /* BluetoothConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A4C38D6199D557F00FB3F6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothConnectTests.swift; sourceTree = "<group>"; };
-		2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = PostureSenseDriver.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = PostureSenseDriver.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
