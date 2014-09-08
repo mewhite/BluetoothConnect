@@ -14,6 +14,9 @@ enum PostureSenseStatus {
     case PoweredOff
     case Searching
     case Connecting
+    case FindingServices
+    case DiscoveringCharacteristics
+    case SettingUp
     case Disconnected
     case Callibrating
     case Registering
@@ -25,8 +28,44 @@ enum PostureSenseStatus {
     case Unauthorized
     case Unsupported
     case PoweredOn
-    
 }
+
+//Service UUID Constants
+let GENERIC_ACCESS_PROFILE = CBUUID.UUIDWithString("1800")
+let DEVICE_INFORMATION = CBUUID.UUIDWithString("180A")
+let POSTURE_SENSOR = CBUUID.UUIDWithString("D6E8F230-1513-11E4-8C21-0800200C9A66")
+let UUIDS: [CBUUID] = [GENERIC_ACCESS_PROFILE, DEVICE_INFORMATION, POSTURE_SENSOR]
+
+
+//Characteristic UUID Constants
+let BATTERY_LEVEL = "2A19"
+let SENSOR_OFFSETS = "D6E8F233-1513-11E4-8C21-0800200C9A66"
+let SENSOR_COEFFS = "D6E8F234-1513-11E4-8C21-0800200C9A66"
+let ACCEL_OFFSETS = "D6E8F235-1513-11E4-8C21-0800200C9A66"
+let UNIX_TIME_STAMP = "D6E91942-1513-11E4-8C21-0800200C9A66"
+let REAL_TIME_CONTROL = "D6E91940-1513-11E4-8C21-0800200C9A66"
+let REAL_TIME_DATA = "D6E91941-1513-11E4-8C21-0800200C9A66"
+
+//Constants
+var onByte = [UInt8] (count: 1, repeatedValue: 1)
+let REAL_TIME_CONTROL_ON = NSData(bytes: &onByte, length: 1)
+var offByte = [UInt8] (count: 1, repeatedValue: 0)
+let REAL_TIME_CONTROLL_OFF = NSData(bytes: &offByte, length: 1)
+
+
+
+//let REAL_TIME_CONTROL_ON =  NSData(NSData( bytes: UnsafePointer<>(1), length: 1)
+//let REAL_TIME_CONTROLL_OFF = NSData(bytes: 1, length: 1)
+
+//Characteristics
+var batteryLevel: CBCharacteristic? = nil
+var sensorOffsets: CBCharacteristic? = nil
+var sensorCoeffs: CBCharacteristic? = nil
+var accelOffsets: CBCharacteristic? = nil
+var unixTimeStamp: CBCharacteristic? = nil
+var realTimeControl: CBCharacteristic? = nil
+var realTimeData: CBCharacteristic? = nil
+
 
 protocol PostureSenseDriverDelegate
 {
@@ -37,15 +76,12 @@ protocol PostureSenseDriverDelegate
 class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     
     var myCentralManager: CBCentralManager? = nil
-    
     var myPeripheral: CBPeripheral? = nil
+    var myPostureSenseDelegate: PostureSenseDriverDelegate? = nil
     
-    var myDelegate: PostureSenseDriverDelegate? = nil
-    
-
     init(delegate: PostureSenseDriverDelegate)
     {
-        myDelegate = delegate
+        myPostureSenseDelegate = delegate
         super.init()
         myCentralManager = CBCentralManager(delegate:self, queue:dispatch_queue_create(nil, nil))
     }
@@ -55,12 +91,10 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func centralManagerDidUpdateState(central: CBCentralManager!)
     {
-        myDelegate?.didChangeStatus(.PoweredOn)
-        //printCentralState(central.state)
+        myPostureSenseDelegate?.didChangeStatus(.PoweredOn)
         //TODO: check which state its in and scan/act accordingly
-        var uuids: [CBUUID] = [CBUUID.UUIDWithString("1800"), CBUUID.UUIDWithString("180A"), CBUUID.UUIDWithString("180F"), CBUUID.UUIDWithString("D6E8F230-1513-11E4-8C21-0800200C9A66")]
-        central.scanForPeripheralsWithServices(uuids, options:nil)
-        myDelegate?.didChangeStatus(.Searching)
+        central.scanForPeripheralsWithServices(UUIDS, options:nil)
+        myPostureSenseDelegate?.didChangeStatus(.Searching)
     }
     
     func centralManager(central: CBCentralManager!,
@@ -71,18 +105,18 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         central.stopScan()
         self.myPeripheral = peripheral
         myCentralManager!.connectPeripheral(peripheral, options: nil)
-        myDelegate?.didChangeStatus(.Connecting)
-        //myCentralManager!.connectPeripheral(peripheral, options: [CBConnectPeripheralOptionNotifyOnConnectionKey: NSString()])
-        //TODO: see options documentation and learn how to actually write them.
-        //TODO: stop scanning when done / found last peripheral needed, not immediately
+        //TODO: change options for connecting?
+        myPostureSenseDelegate?.didChangeStatus(.Connecting)
+        //TODO: stop scanning when done - if user selects posture sensor, it should stop scan - until then, it finds all sensors around - user can select which to connect to
     }
     
     func centralManager(central: CBCentralManager!,
         didConnectPeripheral peripheral: CBPeripheral!)
     {
         peripheral.delegate = self
-        //TODO: specify which services to discover - not nil
+        //TODO: specify which services to discover - not nil?
         peripheral.discoverServices(nil)
+        myPostureSenseDelegate?.didChangeStatus(.FindingServices)
     }
     
     func centralManager(central: CBCentralManager!,
@@ -96,8 +130,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDisconnectPeripheral peripheral: CBPeripheral!,
         error: NSError!)
     {
-        myDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
-        //println("disconnected peripheral")
+        myPostureSenseDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
     }
     
     //TODO: do we need this function? why this vs ^^ (didDiscoverPeripheral)
@@ -126,9 +159,9 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         case CBCentralManagerState.PoweredOff: stateName = "poweredoff"; status = .PoweredOff
         case CBCentralManagerState.PoweredOn: stateName = "poweredon"; status = .PoweredOn
         }
-        println("Central State = \(stateName)")
-        myDelegate?.didChangeStatus(status)
-        
+        //TODO: for testing / potential debugging purposes, should eventually take out
+        println("Central State, printed from PostureSenseDriver = \(stateName)")
+        myPostureSenseDelegate?.didChangeStatus(status)
     }
     
     //PERIPHERAL DELEGATE FUNCTIONS
@@ -140,8 +173,9 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         {
             //println("Discovered service \(service)")
             //TODO: only look for characteristics of certain services
-            //println("Discovering characteristics")
             peripheral.discoverCharacteristics(nil, forService: service)
+            myPostureSenseDelegate?.didChangeStatus(.DiscoveringCharacteristics)
+            
         }
     }
     
@@ -149,13 +183,39 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDiscoverCharacteristicsForService service: CBService!,
         error: NSError!)
     {
+        //TODO: SHOULD I WRITE/READ VALUES AS I FIND EACH CHARACTERISTICS, OR FIND ALL CHARACTERISTICS AND THEN SET THEM UP???
         for characteristic in service.characteristics as [CBCharacteristic]
         {
-            //println("CHARACTERISTIC NAME" + (characteristic.UUID.UUIDString))
-            // println("CHARACTERISTIC NAME" + (CBUUID.UUIDWithString(characteristic.UUID)).UUIDString)
-            if (characteristic.UUID.UUIDString == "D6E91941-1513-11E4-8C21-0800200C9A66")
+            switch characteristic.UUID.UUIDString
+            { 
+            case BATTERY_LEVEL:
+                batteryLevel = characteristic
+                peripheral.readValueForCharacteristic(characteristic)
+            case SENSOR_OFFSETS:
+                sensorOffsets = characteristic
+                println("found sensor offsets")
+                peripheral.readValueForCharacteristic(characteristic)
+            case SENSOR_COEFFS:
+                sensorCoeffs = characteristic
+            case ACCEL_OFFSETS:
+                accelOffsets = characteristic
+            case UNIX_TIME_STAMP:
+                unixTimeStamp = characteristic
+            case REAL_TIME_CONTROL:
+                realTimeControl = characteristic
+                println("setting real time control")
+                peripheral.writeValue(REAL_TIME_CONTROL_ON, forCharacteristic: characteristic, type: CBCharacteristicWriteType.WithResponse)
+            case REAL_TIME_DATA:
+                realTimeData = characteristic
+                peripheral.setNotifyValue(true, forCharacteristic: characteristic)
+            default: println()
+            }
+            
+            if (characteristic.UUID.UUIDString == REAL_TIME_DATA)
             {
+                println("real time data characteristic")
                 //println("CHARACTERISTIC NAME" + (characteristic.UUID.UUIDString))
+                realTimeData = characteristic
                 peripheral.setNotifyValue(true, forCharacteristic: characteristic)
             }
         }
@@ -181,8 +241,32 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
+        switch characteristic.UUID.UUIDString
+        {
+        case BATTERY_LEVEL:
+            var batteryLevelString: String = NSString(data: characteristic.value, encoding: NSUTF8StringEncoding)
+            println("battery level decoded data: " + batteryLevelString)
+            println("battery level as NSData: \(characteristic.value) ")
+            var decodedInteger: Int? = nil
+            (characteristic.value).getBytes(&decodedInteger, length: 4)
+            
+            
+            println("battery level bytes into integer: \(decodedInteger)")
+            
+                //&decodedInteger length:sizeof(decodedInteger)];
+            
+            
+        case SENSOR_OFFSETS: println()
+        case SENSOR_COEFFS: println()
+        case ACCEL_OFFSETS: println()
+        case UNIX_TIME_STAMP: println()
+        case REAL_TIME_CONTROL: println()
+        case REAL_TIME_DATA: println()
+        default: println()
+        }
+
         let data = ("My Personal Characteristic Data" as NSString).dataUsingEncoding(NSUTF8StringEncoding)
-        myDelegate?.didReceiveData(data)
+        myPostureSenseDelegate?.didReceiveData(data)
     }
     
     func peripheral(peripheral: CBPeripheral!,
@@ -192,6 +276,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         //NSLog("characteristic value writing")
         //TODO: deal with writing error
     }
+    
+    
     
     /*
     func writeValue(data: NSData!,

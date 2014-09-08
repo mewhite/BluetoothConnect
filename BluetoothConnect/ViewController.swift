@@ -18,6 +18,7 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        didChangeStatus(.PoweredOff)
         myPostureSenseDriver = PostureSenseDriver(delegate: self)
     }
     
@@ -31,13 +32,18 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
         switch status
         {
         case PostureSenseStatus.PoweredOff: println("PoweredOff")
-        case PostureSenseStatus.Searching: println("Searching")
-        case PostureSenseStatus.Connecting: println("Connecting")
+        case PostureSenseStatus.Searching: println("Searching") //searching for sensor
+        case PostureSenseStatus.Connecting: println("Connecting") //connecting to peripheral/posture sensor
+        case PostureSenseStatus.FindingServices: println("Finding Services")  //finding services
+        case PostureSenseStatus.DiscoveringCharacteristics: println("Discovering Characteristics")  //finding services
+
+        case PostureSenseStatus.SettingUp: println("Setting Up")  //finding/setting services/characteristics: real time control, initializing values, etc
         case PostureSenseStatus.Disconnected: println("Disconnected")
-        case PostureSenseStatus.Callibrating: println("Callibrating")
-        case PostureSenseStatus.Registering: println("Registering")
-        case PostureSenseStatus.LiveUpdates: println("LiveUpdates")
+        case PostureSenseStatus.Callibrating: println("Callibrating")  //setting calibration offsets, etc
+        case PostureSenseStatus.Registering: println("Registering") //?
+        case PostureSenseStatus.LiveUpdates: println("LiveUpdates") //receiving live data, ready to use, etc
         case PostureSenseStatus.Disengaging: println("Disengaging")
+            
         case PostureSenseStatus.Unknown: println("Unknown")
         case PostureSenseStatus.Resetting: println("Resetting")
         case PostureSenseStatus.Unauthorized: println("Unauthorized")
