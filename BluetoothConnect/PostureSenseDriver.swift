@@ -38,24 +38,24 @@ let UUIDS: [CBUUID] = [GENERIC_ACCESS_PROFILE, DEVICE_INFORMATION, POSTURE_SENSO
 
 
 //Characteristic UUID Constants
-let BATTERY_LEVEL = "2A19"
-let SENSOR_OFFSETS = "D6E8F233-1513-11E4-8C21-0800200C9A66"
-let SENSOR_COEFFS = "D6E8F234-1513-11E4-8C21-0800200C9A66"
-let ACCEL_OFFSETS = "D6E8F235-1513-11E4-8C21-0800200C9A66"
-let UNIX_TIME_STAMP = "D6E91942-1513-11E4-8C21-0800200C9A66"
-let REAL_TIME_CONTROL = "D6E91940-1513-11E4-8C21-0800200C9A66"
-let REAL_TIME_DATA = "D6E91941-1513-11E4-8C21-0800200C9A66"
+enum CharacteristicUUID: String
+{
+    case BATTERY_LEVEL = "2A19"
+    case SENSOR_OFFSETS = "D6E8F233-1513-11E4-8C21-0800200C9A66"
+    case SENSOR_COEFFS = "D6E8F234-1513-11E4-8C21-0800200C9A66"
+    case ACCEL_OFFSETS = "D6E8F235-1513-11E4-8C21-0800200C9A66"
+    case UNIX_TIME_STAMP = "D6E91942-1513-11E4-8C21-0800200C9A66"
+    case REAL_TIME_CONTROL = "D6E91940-1513-11E4-8C21-0800200C9A66"
+    case REAL_TIME_DATA = "D6E91941-1513-11E4-8C21-0800200C9A66"
+}
+
 
 //Constants
 var onByte = [UInt8] (count: 1, repeatedValue: 1)
 let REAL_TIME_CONTROL_ON = NSData(bytes: &onByte, length: 1)
 var offByte = [UInt8] (count: 1, repeatedValue: 0)
-let REAL_TIME_CONTROLL_OFF = NSData(bytes: &offByte, length: 1)
+let REAL_TIME_CONTROL_OFF = NSData(bytes: &offByte, length: 1)
 
-
-
-//let REAL_TIME_CONTROL_ON =  NSData(NSData( bytes: UnsafePointer<>(1), length: 1)
-//let REAL_TIME_CONTROLL_OFF = NSData(bytes: 1, length: 1)
 
 //Characteristics
 var batteryLevel: CBCharacteristic? = nil
@@ -171,7 +171,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     {
         for service in peripheral.services as [CBService]
         {
-            //println("Discovered service \(service)")
             //TODO: only look for characteristics of certain services
             peripheral.discoverCharacteristics(nil, forService: service)
             myPostureSenseDelegate?.didChangeStatus(.DiscoveringCharacteristics)
@@ -183,42 +182,63 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDiscoverCharacteristicsForService service: CBService!,
         error: NSError!)
     {
-        //TODO: SHOULD I WRITE/READ VALUES AS I FIND EACH CHARACTERISTICS, OR FIND ALL CHARACTERISTICS AND THEN SET THEM UP???
         for characteristic in service.characteristics as [CBCharacteristic]
         {
-            switch characteristic.UUID.UUIDString
-            { 
-            case BATTERY_LEVEL:
-                batteryLevel = characteristic
-                peripheral.readValueForCharacteristic(characteristic)
-            case SENSOR_OFFSETS:
-                sensorOffsets = characteristic
-                println("found sensor offsets")
-                peripheral.readValueForCharacteristic(characteristic)
-            case SENSOR_COEFFS:
-                sensorCoeffs = characteristic
-            case ACCEL_OFFSETS:
-                accelOffsets = characteristic
-            case UNIX_TIME_STAMP:
-                unixTimeStamp = characteristic
-            case REAL_TIME_CONTROL:
-                realTimeControl = characteristic
-                println("setting real time control")
-                peripheral.writeValue(REAL_TIME_CONTROL_ON, forCharacteristic: characteristic, type: CBCharacteristicWriteType.WithResponse)
-            case REAL_TIME_DATA:
-                realTimeData = characteristic
-                peripheral.setNotifyValue(true, forCharacteristic: characteristic)
-            default: println()
+            if let UUID = CharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
+            {
+                switch UUID
+                {
+                case CharacteristicUUID.BATTERY_LEVEL:
+                    batteryLevel = characteristic
+                case .SENSOR_OFFSETS:
+                    sensorOffsets = characteristic
+                case .SENSOR_COEFFS:
+                    sensorCoeffs = characteristic
+                case .ACCEL_OFFSETS:
+                    accelOffsets = characteristic
+                case .UNIX_TIME_STAMP:
+                    unixTimeStamp = characteristic
+                case .REAL_TIME_CONTROL:
+                    realTimeControl = characteristic
+                case .REAL_TIME_DATA:
+                    println("real time data characteristic")
+                    realTimeData = characteristic
+                default: println()
+                }
             }
             
-            if (characteristic.UUID.UUIDString == REAL_TIME_DATA)
-            {
-                println("real time data characteristic")
-                //println("CHARACTERISTIC NAME" + (characteristic.UUID.UUIDString))
-                realTimeData = characteristic
-                peripheral.setNotifyValue(true, forCharacteristic: characteristic)
-            }
         }
+        setUpPostureSense(peripheral)
+    }
+    
+    func setUpPostureSense(peripheral: CBPeripheral!)
+    {
+        callibratePostureSense(peripheral)
+        peripheral.setNotifyValue(true, forCharacteristic: realTimeData)
+        turnOnRealTimeControl(peripheral)
+    }
+    
+    func callibratePostureSense(peripheral: CBPeripheral!)
+    {
+        peripheral.readValueForCharacteristic(sensorCoeffs)
+        peripheral.readValueForCharacteristic(sensorOffsets)
+        peripheral.readValueForCharacteristic(accelOffsets)
+    }
+    
+    func turnOnRealTimeControl(peripheral: CBPeripheral!)
+    {
+        var onByte = [UInt8] (count: 1, repeatedValue: 1)
+        let REAL_TIME_CONTROL_ON = NSData(bytes: &onByte, length: 1)
+        peripheral.writeValue(REAL_TIME_CONTROL_ON, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
+    }
+    
+    func turnOffRealTimeControl(peripheral: CBPeripheral!)
+    {
+        var offByte = [UInt8] (count: 1, repeatedValue: 0)
+        let REAL_TIME_CONTROL_OFF = NSData(bytes: &offByte, length: 1)
+        peripheral.writeValue(REAL_TIME_CONTROL_OFF, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
+        println("turned off real time control")
+        
     }
     
     func peripheral(peripheral: CBPeripheral!,
@@ -231,9 +251,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             println("Error changing notification state")
         } else {
             //this should mean it's the characteristic for real time data
-            //println(characteristic.UUID.UUIDString + "is now notifying")
             //TODO: only change state for the realtime data (last one)
-            peripheral.readValueForCharacteristic(characteristic)
+            //peripheral.readValueForCharacteristic(characteristic)
         }
     }
     
@@ -241,32 +260,36 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        switch characteristic.UUID.UUIDString
+        if let UUID = CharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
         {
-        case BATTERY_LEVEL:
-            var batteryLevelString: String = NSString(data: characteristic.value, encoding: NSUTF8StringEncoding)
-            println("battery level decoded data: " + batteryLevelString)
-            println("battery level as NSData: \(characteristic.value) ")
-            var decodedInteger: Int? = nil
-            (characteristic.value).getBytes(&decodedInteger, length: 4)
-            
-            
-            println("battery level bytes into integer: \(decodedInteger)")
-            
-                //&decodedInteger length:sizeof(decodedInteger)];
-            
-            
-        case SENSOR_OFFSETS: println()
-        case SENSOR_COEFFS: println()
-        case ACCEL_OFFSETS: println()
-        case UNIX_TIME_STAMP: println()
-        case REAL_TIME_CONTROL: println()
-        case REAL_TIME_DATA: println()
-        default: println()
+            switch UUID
+            {
+            case .BATTERY_LEVEL:
+                var batteryLevelString: String = NSString(data: characteristic.value, encoding: NSUTF8StringEncoding)
+                println("battery level decoded data: " + batteryLevelString)
+                println("battery level as NSData: \(characteristic.value) ")
+                var decodedInteger: Int? = nil
+                (characteristic.value).getBytes(&decodedInteger, length: 4)
+                
+                
+                println("battery level bytes into integer: \(decodedInteger)")
+                
+                    //&decodedInteger length:sizeof(decodedInteger)];
+                
+                
+            case .SENSOR_OFFSETS: println()
+            case .SENSOR_COEFFS: println()
+            case .ACCEL_OFFSETS: println()
+            case .UNIX_TIME_STAMP: println()
+            case .REAL_TIME_CONTROL:
+                println()
+            case .REAL_TIME_DATA:
+                myPostureSenseDelegate?.didReceiveData(characteristic.value)
+            default: println()
+            }
         }
 
-        let data = ("My Personal Characteristic Data" as NSString).dataUsingEncoding(NSUTF8StringEncoding)
-        myPostureSenseDelegate?.didReceiveData(data)
+
     }
     
     func peripheral(peripheral: CBPeripheral!,
@@ -277,6 +300,18 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         //TODO: deal with writing error
     }
     
+    
+    func disengagePostureSense()
+    {
+        println("disengaged")
+        turnOffRealTimeControl(myPeripheral)
+    }
+    
+    func engagePostureSense()
+    {
+        println("engaged")
+        turnOnRealTimeControl(myPeripheral)
+    }
     
     
     /*
