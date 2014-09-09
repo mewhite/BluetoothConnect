@@ -30,14 +30,16 @@ enum PostureSenseStatus {
 }
 
 /// Bluutooth service UUIDs
-enum ServiceUUID : String {
+enum ServiceUUID : String
+{
     case GenericAccessProfile   = "1800"
     case DeviceInformation      = "180A"
     case PostureSensor          = "D6E8F230-1513-11E4-8C21-0800200C9A66"
 }
 
 /// Characteristic UUIDs for Device Information service
-enum DeviceCharacteristicUUID : String {
+enum DeviceCharacteristicUUID : String
+{
     case SystemID           = "0x2A23"
     case ModelName          = "0x2A24"
     case SerialNumber       = "0x2A25"
@@ -66,12 +68,14 @@ var accelOffsets: CBCharacteristic? = nil
 var unixTimeStamp: CBCharacteristic? = nil
 var realTimeControl: CBCharacteristic? = nil
 var realTimeData: CBCharacteristic? = nil
-// TODO: (YS) no need for this global vars... Instead we need to get the NSData, decode it (using the decoder class), and pass it on to the delegate
+// TODO: (YS) no need for these global vars... Instead we need to get the NSData, decode it (using the decoder class), and pass it on to the delegate
 
 protocol PostureSenseDriverDelegate
 {
     func didChangeStatus(status: PostureSenseStatus)
     func didReceiveData(data: NSData!)
+    func didReceiveBetteryLevel(level: Int) // TODO: (YS) call this when reading battery level - both on connect, and in regular intervals
+    func didGetError(error: NSError) // TODO: (YS) call this on error and some state changes. Delegate should alert the user.
 }
 
 class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -130,7 +134,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     {
         peripheral.delegate = self
         //TODO: specify which services to discover - not nil?
-        // TODO: (YS) in the first time, we need "Device Information". Afetr that we only need "Posture Sensor"
+        // TODO: (YS) in the first time, we need "Device Information" to decide which device to pair with. Afetr that we only need "Posture Sensor"
         peripheral.discoverServices(nil)
         myPostureSenseDelegate?.didChangeStatus(.FindingServices) // TODO: (YS) we can probably put this under some generic "getting data" status
     }
@@ -161,24 +165,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didRetrieveConnectedPeripherals peripherals: [AnyObject]!)
     {
         //println("did retrieve connected peripherals")
-    }
-    
-    func printCentralState(centralState: CBCentralManagerState)
-    {
-        var stateName: String
-        var status: PostureSenseStatus
-        switch centralState
-        {
-        case CBCentralManagerState.Unknown: stateName = "unknown"; status = .Unknown
-        case CBCentralManagerState.Resetting: stateName = "resetting"; status = .Resetting
-        case CBCentralManagerState.Unsupported: stateName = "unsupported"; status = .Unsupported
-        case CBCentralManagerState.Unauthorized: stateName = "unauthorized"; status = .Unauthorized
-        case CBCentralManagerState.PoweredOff: stateName = "poweredoff"; status = .PoweredOff
-        case CBCentralManagerState.PoweredOn: stateName = "poweredon"; status = .PoweredOn
-        }
-        //TODO: for testing / potential debugging purposes, should eventually take out. don't know when it updates to these states..
-        println("Central State, printed from PostureSenseDriver = \(stateName)")
-        myPostureSenseDelegate?.didChangeStatus(status)
     }
     
     // MARK: - CBPeripheralDelegate Functions

@@ -55,8 +55,14 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     {
         println("Received Data: \(data)")
     }
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+
+    func didReceiveBetteryLevel(level: Int)
+    {
+        // TODO: (YS) update battery view
+    }
+
+    func didGetError(error: NSError)
+    {
+        // TODO: (YS) alert the user
     }
 }
