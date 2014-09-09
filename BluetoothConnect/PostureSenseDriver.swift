@@ -108,6 +108,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 
         case .PoweredOff:
             println("Bluetooth is currently powered off.") // TODO: (YS) alert the delegate
+            //TODO: state poweredOff
 
         default:
             myPostureSenseDelegate?.didChangeStatus(.PoweredOff)
@@ -136,7 +137,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         //TODO: specify which services to discover - not nil?
         // TODO: (YS) in the first time, we need "Device Information" to decide which device to pair with. Afetr that we only need "Posture Sensor"
         peripheral.discoverServices(nil)
-        myPostureSenseDelegate?.didChangeStatus(.FindingServices) // TODO: (YS) we can probably put this under some generic "getting data" status
+        println("Finding Services")
+        myPostureSenseDelegate?.didChangeStatus(.SettingUp) // TODO: (YS) we can probably put this under some generic "getting data" status
     }
     
     func centralManager(central: CBCentralManager!,
@@ -176,7 +178,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         {
             //TODO: only look for characteristics of certain services - "Device Information" and "Posture Sensor"
             peripheral.discoverCharacteristics(nil, forService: service)
-            myPostureSenseDelegate?.didChangeStatus(.DiscoveringCharacteristics) // TODO: (YS) we can probably put this under some generic "getting data" status
+            println("Discovering Characteristics")
         }
     }
 
@@ -256,6 +258,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         var onByte = [UInt8] (count: 1, repeatedValue: 1)
         let RealTimeControl_ON = NSData(bytes: &onByte, length: 1)
         peripheral.writeValue(RealTimeControl_ON, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
+        //TODO: update state: receiving real time data
     }
     
     func turnOffRealTimeControl(peripheral: CBPeripheral!)
@@ -278,8 +281,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         } else {
             //this should mean it's the characteristic for real time data
             //TODO: only change state for the realtime data (last one)
-            //peripheral.readValueForCharacteristic(characteristic)
             // TODO: (YS) notify delegate that we are receiving RT data at last
+            // --> actually notify for this in real time control
         }
     }
     
