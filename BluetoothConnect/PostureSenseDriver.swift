@@ -182,47 +182,48 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDiscoverCharacteristicsForService service: CBService!,
         error: NSError!)
     {
+        //TODO: SHOULD I WRITE/READ VALUES AS I FIND EACH CHARACTERISTICS, OR FIND ALL CHARACTERISTICS AND THEN SET THEM UP???
         for characteristic in service.characteristics as [CBCharacteristic]
         {
+           // (characteristic.UUID.UUIDString)
             if let UUID = CharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
             {
                 switch UUID
                 {
                 case CharacteristicUUID.BATTERY_LEVEL:
                     batteryLevel = characteristic
+                    peripheral.readValueForCharacteristic(characteristic)
                 case .SENSOR_OFFSETS:
                     sensorOffsets = characteristic
+                    println("found sensor offsets")
+                    peripheral.readValueForCharacteristic(characteristic)
                 case .SENSOR_COEFFS:
                     sensorCoeffs = characteristic
+                    callibratePostureSense(peripheral)
                 case .ACCEL_OFFSETS:
                     accelOffsets = characteristic
                 case .UNIX_TIME_STAMP:
                     unixTimeStamp = characteristic
                 case .REAL_TIME_CONTROL:
                     realTimeControl = characteristic
+                    println("setting real time control")
+                    turnOnRealTimeControl(peripheral)
                 case .REAL_TIME_DATA:
                     println("real time data characteristic")
                     realTimeData = characteristic
+                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
+                    callibratePostureSense(peripheral)
                 default: println()
                 }
             }
-            
         }
-        setUpPostureSense(peripheral)
-    }
-    
-    func setUpPostureSense(peripheral: CBPeripheral!)
-    {
-        callibratePostureSense(peripheral)
-        peripheral.setNotifyValue(true, forCharacteristic: realTimeData)
-        turnOnRealTimeControl(peripheral)
+       
     }
     
     func callibratePostureSense(peripheral: CBPeripheral!)
     {
-        peripheral.readValueForCharacteristic(sensorCoeffs)
-        peripheral.readValueForCharacteristic(sensorOffsets)
-        peripheral.readValueForCharacteristic(accelOffsets)
+        myPeripheral!.readValueForCharacteristic(sensorCoeffs)
+        
     }
     
     func turnOnRealTimeControl(peripheral: CBPeripheral!)
