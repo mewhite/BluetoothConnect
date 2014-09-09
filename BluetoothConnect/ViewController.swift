@@ -15,25 +15,11 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     
     var myPostureSenseDriver: PostureSenseDriver? = nil
     
-    @IBOutlet var disengageButton : UIButton!
-    @IBOutlet var engageButton : UIButton!
-
     override func viewDidLoad()
     {
         super.viewDidLoad()
         didChangeStatus(.PoweredOff)
         myPostureSenseDriver = PostureSenseDriver(delegate: self)
-    }
-    
-    @IBAction func deviceDisengaged(sender : AnyObject) {
-    println("device disengaged")
-        myPostureSenseDriver?.disengagePostureSense()
-        
-    }
-    @IBAction func deviceEngaged(sender : AnyObject) {
-        println("device engaged")
-        myPostureSenseDriver?.engagePostureSense()
-        
     }
     
     func didChangeStatus(status: PostureSenseStatus)
