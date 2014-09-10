@@ -10,7 +10,7 @@ import Foundation
 import CoreBluetooth
 import UIKit // just for UIDevice in error description
 
-enum PostureSenseStatus {
+enum PostureSenseStatus : Printable {
     case PoweredOff
     case Searching
     case Connecting
@@ -19,6 +19,19 @@ enum PostureSenseStatus {
     case LiveUpdates
     case Idle           // connected but not receiving LiveUpdates
     case Disengaging    // turning off LiveUpdates
+
+    var description: String {
+        switch self {
+        case PoweredOff:    return "Bluetooth is off"
+        case Searching:     return "Searching Devices"
+        case Connecting:    return "Connecting to device"
+        case SettingUp:     return "Setting up live updates"
+        case Disconnected:  return "Disconnected from device"
+        case LiveUpdates:   return "Live update"
+        case Idle:          return "Idle"
+        case Disengaging:   return "Disengaging"
+        }
+    }
 }
 
 /// Bluutooth service UUIDs
@@ -87,13 +100,6 @@ enum RuntimeErrorCodes: Int
     case ErrorCodeWritingCharacteristicValue    = 4
 }
 
-//Characteristics
-var batteryLevel: CBCharacteristic? = nil
-var unixTimeStamp: CBCharacteristic? = nil
-var realTimeControl: CBCharacteristic? = nil
-// TODO: (YS) no need for these global vars... Instead we need to get the NSData, decode it (using the decoder class), and pass it on to the delegate
-// TODO: QUESTION: (MW) Oh that makes sense for the sensor offsets/coeffs, etc, but what about the battery level, realTimecontrol (and TimeStamp?? Are we even using the timestamp yet?). How do we write to / read values of characteristics at will/as desired after initial setup. for realtime data we'll be updated when it changed, but for the other changing values?
-
 protocol PostureSenseDriverDelegate
 {
     func didChangeStatus(status: PostureSenseStatus)
@@ -106,7 +112,11 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 {
     var myCentralManager: CBCentralManager? = nil
     var myPeripheral: CBPeripheral? = nil
+    var myRealTimeControl: CBCharacteristic? = nil
+    var myUnixTimeStamp: CBCharacteristic? = nil
+
     var myPostureSenseDelegate: PostureSenseDriverDelegate? = nil
+    var myDecoder = PostureSenseDecoder()
 
     var myStatus : PostureSenseStatus = .PoweredOff {
         didSet {
@@ -192,6 +202,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         //TODO: specify which services to discover - not nil?
         // TODO: (YS) in the first time, we need "Device Information" to decide which device to pair with. Afetr that we only need "Posture Sensor"
         // todo: QUESTION (MW) we don't need the Generic Access Profile? Is the local name not the identifier for which posture sensor it is?
+        // (YS) Right, the generic access is standard, and we don't need to query it here.
         peripheral.discoverServices(nil)
         myStatus = .SettingUp
     }
@@ -221,8 +232,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             return
         }
 
-        for service in peripheral.services as [CBService]
-        {
+        for service in peripheral.services as [CBService] {
             peripheral.discoverCharacteristics(nil, forService: service)
         }
     }
@@ -258,30 +268,18 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
             {
                 switch UUID {
-                    // TODO: (YS) pass the characteristic.data to the decoder and/or the delegate
-                case .BatteryLevel:
-                    println("found battery level")
-                    peripheral.readValueForCharacteristic(characteristic)
-                case .SensorOffsets:
-                    println("found sensor offsets")
-                    peripheral.readValueForCharacteristic(characteristic)
-                case .SensorCoeffs:
-                    println("found sensor coeffs")
-                    peripheral.readValueForCharacteristic(characteristic)
-                case .AccelOffsets:
-                    println("found accel offsets")
-                    peripheral.readValueForCharacteristic(characteristic)
-                case .UnixTimeStamp:
-                    println("found time stamp")
-                    unixTimeStamp = characteristic
-                case .RealTimeControl:
-                    println("found real time control")
-                    realTimeControl = characteristic
+
+                case .UnixTimeStamp: // save for writing into this characteristic
+                    myUnixTimeStamp = characteristic
+
+                case .RealTimeControl: // save for writing into this characteristic
+                    myRealTimeControl = characteristic
+
                 case .RealTimeData:
-                    println("found real time data characteristic")
                     peripheral.setNotifyValue(true, forCharacteristic: characteristic)
+
                 default:
-                    return
+                    peripheral.readValueForCharacteristic(characteristic)
                 }
             }
         }
@@ -320,6 +318,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             return
         }
 
+        // TODO: (YS) switch(characteristic.service) and check DeviceCharacteristicUUID
+
         if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
         {
             switch UUID {
@@ -341,6 +341,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             }
             // TODO: (YS) after integrations with decoder - send vals to decoder and/or delegate
         }
+
     }
     
     func turnOnRealTimeControl(peripheral: CBPeripheral!)
@@ -348,7 +349,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         // TODO: (YS) ensure peripheral is not nil and is connected
         var onByte = [UInt8] (count: 1, repeatedValue: 1)
         let RealTimeControl_ON = NSData(bytes: &onByte, length: 1)
-        peripheral.writeValue(RealTimeControl_ON, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
+        peripheral.writeValue(RealTimeControl_ON, forCharacteristic: myRealTimeControl, type: CBCharacteristicWriteType.WithResponse)
         myStatus = .LiveUpdates
     }
     
@@ -359,7 +360,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         // TODO: (YS) ensure peripheral is not nil and is connected
         var offByte = [UInt8] (count: 1, repeatedValue: 0)
         let RealTimeControl_OFF = NSData(bytes: &offByte, length: 1)
-        peripheral.writeValue(RealTimeControl_OFF, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
+        peripheral.writeValue(RealTimeControl_OFF, forCharacteristic: myRealTimeControl, type: CBCharacteristicWriteType.WithResponse)
    }
     
     //Only purpose of this function is for error checking

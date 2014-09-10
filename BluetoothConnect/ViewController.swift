@@ -28,23 +28,9 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     }
     func didChangeStatus(status: PostureSenseStatus)
     {
-        printStatus(status)
+        println("Driver status: \(status)")
     }
     
-    func printStatus(status: PostureSenseStatus)
-    {
-        switch status
-        {
-            case PostureSenseStatus.PoweredOff: println("PoweredOff")
-            case PostureSenseStatus.Searching: println("Searching") //searching for sensor
-            case PostureSenseStatus.Connecting: println("Connecting") //connecting to peripheral/posture sensor
-            case PostureSenseStatus.SettingUp: println("Setting Up") //finding/setting services/characteristics: real time control, initializing values, etc
-            case PostureSenseStatus.Disconnected: println("Disconnected")
-            case PostureSenseStatus.LiveUpdates: println("LiveUpdates") //receiving live data, ready to use, etc
-            case PostureSenseStatus.Disengaging: println("Disengaging")
-            case PostureSenseStatus.Idle: println("Idle")
-        }
-    }
     func didReceiveData(data: NSData!)
     {
         println("Received Data: \(data)")

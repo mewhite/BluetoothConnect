@@ -11,8 +11,10 @@
 		2A4C38C7199D557F00FB3F6E /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4C38C6199D557F00FB3F6E /* ViewController.swift */; };
 		2A4C38CA199D557F00FB3F6E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38C8199D557F00FB3F6E /* Main.storyboard */; };
 		2A4C38CC199D557F00FB3F6E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38CB199D557F00FB3F6E /* Images.xcassets */; };
-		2A4C38D8199D557F00FB3F6E /* BluetoothConnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */; };
 		2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */; };
+		DCBE4D7E19C06BDC00A45D95 /* PostureDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7C19C06BDC00A45D95 /* PostureDecoderTests.swift */; };
+		DCBE4D8019C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */; };
+		DCBE4D8119C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,8 +36,9 @@
 		2A4C38CB199D557F00FB3F6E /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		2A4C38D1199D557F00FB3F6E /* BluetoothConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A4C38D6199D557F00FB3F6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothConnectTests.swift; sourceTree = "<group>"; };
 		2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = PostureSenseDriver.swift; sourceTree = "<group>"; };
+		DCBE4D7C19C06BDC00A45D95 /* PostureDecoderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureDecoderTests.swift; sourceTree = "<group>"; };
+		DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureSenseDecoder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +83,7 @@
 				2A4C38C4199D557F00FB3F6E /* AppDelegate.swift */,
 				2A4C38C6199D557F00FB3F6E /* ViewController.swift */,
 				2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */,
+				DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */,
 				2A4C38C8199D557F00FB3F6E /* Main.storyboard */,
 				2A4C38CB199D557F00FB3F6E /* Images.xcassets */,
 				2A4C38C2199D557F00FB3F6E /* Supporting Files */,
@@ -98,7 +102,7 @@
 		2A4C38D4199D557F00FB3F6E /* BluetoothConnectTests */ = {
 			isa = PBXGroup;
 			children = (
-				2A4C38D7199D557F00FB3F6E /* BluetoothConnectTests.swift */,
+				DCBE4D7C19C06BDC00A45D95 /* PostureDecoderTests.swift */,
 				2A4C38D5199D557F00FB3F6E /* Supporting Files */,
 			);
 			path = BluetoothConnectTests;
@@ -213,6 +217,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A4C38C7199D557F00FB3F6E /* ViewController.swift in Sources */,
+				DCBE4D8019C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */,
 				2A4C38C5199D557F00FB3F6E /* AppDelegate.swift in Sources */,
 				2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */,
 			);
@@ -222,7 +227,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2A4C38D8199D557F00FB3F6E /* BluetoothConnectTests.swift in Sources */,
+				DCBE4D8119C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */,
+				DCBE4D7E19C06BDC00A45D95 /* PostureDecoderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
