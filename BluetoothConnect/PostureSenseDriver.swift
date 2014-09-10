@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreBluetooth
+import UIKit // just for UIDevice in error description
 
 enum PostureSenseStatus {
     case PoweredOff
@@ -51,13 +52,14 @@ enum PostureCharacteristicUUID : String
     case RealTimeData       = "D6E91941-1513-11E4-8C21-0800200C9A66"
 }
 
-///Error Domains and Codes
+/// Error Domains and Codes
 enum ErrorDomain: String
 {
     case ConnectionError    = "ConnectionError"
     case SetupError         = "SetupError"
     case RuntimeError       = "RuntimeError"
 }
+// TODO: (YS) I think we can safely use a single error domain for everything driver-related.
 
 enum ConnectionErrorCodes: Int
 {
@@ -97,10 +99,11 @@ protocol PostureSenseDriverDelegate
     func didChangeStatus(status: PostureSenseStatus)
     func didReceiveData(data: NSData!)
     func didReceiveBatteryLevel(level: Int) // TODO: (YS) call this when reading battery level - both on connect, and in regular intervals
-    func didGetError(error: NSError) // TODO: (YS) call this on error and some state changes. Delegate should alert the user.
+    func didGetError(error: NSError)
 }
 
-class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate
+{
     var myCentralManager: CBCentralManager? = nil
     var myPeripheral: CBPeripheral? = nil
     var myPostureSenseDelegate: PostureSenseDriverDelegate? = nil
@@ -116,36 +119,51 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func centralManagerDidUpdateState(central: CBCentralManager!)
     {
+        var status = PostureSenseStatus.PoweredOff
+        var error : NSError? = nil
+
         switch central.state {
             
         case .PoweredOn:
-            
+            status = .Searching
             central.scanForPeripheralsWithServices(
                 [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw())],
                 options:nil)
-            myPostureSenseDelegate?.didChangeStatus(.Searching)
-        case .Unknown:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeUnidentifiedCentralState.toRaw(), userInfo: nil))
-        case .Resetting:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeResettingConnection.toRaw(), userInfo: nil))
+
+        case .Resetting, .Unknown: // temporary states
+            error = nil
+
         case .Unsupported:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothUnsupported.toRaw(), userInfo: nil))
-            println("The platform does not support Bluetooth low energy.") // TODO: (YS) alert the delegate
-            
+            error = NSError(
+                domain: ErrorDomain.ConnectionError.toRaw(),
+                code: ConnectionErrorCodes.ErrorCodeBluetoothUnsupported.toRaw(),
+                userInfo: [NSLocalizedDescriptionKey: "The \(UIDevice.currentDevice().model) does not support Bluetooth low energy."]
+            )
+
         case .Unauthorized:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothUnauthorized.toRaw(), userInfo: nil))
-            println("The app is not authorized to use Bluetooth low energy") // TODO: (YS) alert the delegate
-            
+            error = NSError(
+                domain: ErrorDomain.ConnectionError.toRaw(),
+                code: ConnectionErrorCodes.ErrorCodeBluetoothUnauthorized.toRaw(),
+                userInfo: [NSLocalizedDescriptionKey: "The app is not authorized to use Bluetooth low energy",
+                    NSLocalizedRecoverySuggestionErrorKey : "Please go to Settings > Privacy to change that."]
+            )
+
         case .PoweredOff:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothPoweredOff.toRaw(), userInfo: nil))
-            println("Bluetooth is currently powered off.") // TODO: (YS) alert the delegate
-            //TODO: state poweredOff
-            
-        default:
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeUnidentifiedCentralState.toRaw(), userInfo: nil))
+            error = NSError(
+                domain: ErrorDomain.ConnectionError.toRaw(),
+                code: ConnectionErrorCodes.ErrorCodeBluetoothPoweredOff.toRaw(),
+                userInfo: [NSLocalizedDescriptionKey: "Bluetooth is currently powered off",
+                    NSLocalizedRecoverySuggestionErrorKey : "Please go to Settings > Bluetooth to change that."]
+            )
         }
+
+        myPostureSenseDelegate?.didChangeStatus(status)
+        if let err = error {
+            myPostureSenseDelegate?.didGetError(err)
+        }
+
     }
-    
+
     func centralManager(central: CBCentralManager!,
         didDiscoverPeripheral peripheral: CBPeripheral!,
         advertisementData: [NSObject : AnyObject]!,

@@ -72,5 +72,9 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
             }
         }
         // TODO: (YS) alert the user
+        println(error.localizedDescription)
+        if let suggestion = error.localizedRecoverySuggestion {
+            println(suggestion)
+        }
     }
 }
