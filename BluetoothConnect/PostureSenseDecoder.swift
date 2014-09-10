@@ -20,11 +20,16 @@ let theAccelerometersCount = 2
     :angles: array of sensor FlexAngle numbered from bottom to top
     :attitudes: array of accelerometer `Acceleration` numbered from bottom to top
 */
-struct Posture
+struct Posture : Printable
 {
     var angles = [FlexAngle] (count: theSensorsCount, repeatedValue: 0)
     var attitudes = [Acceleration] (count: theAccelerometersCount, repeatedValue: (256, 0, 0))
+
+    var description: String {
+        return "Angles: \(angles)   Attitides: \(attitudes)"
+    }
 }
+// TODO: move Posture to a general project header
 
 extension Array {
     /// Make the array have n elements, by either deleting extra elements at the end,

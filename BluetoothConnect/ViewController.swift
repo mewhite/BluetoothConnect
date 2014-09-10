@@ -31,36 +31,23 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
         println("Driver status: \(status)")
     }
     
-    func didReceiveData(data: NSData!)
+    func didReceiveData(posture: Posture)
     {
-        println("Received Data: \(data)")
+        println("Live posture: \(posture)")
     }
 
     func didReceiveBatteryLevel(level: Int)
     {
         // TODO: (YS) update battery view
+        println("battery level: \(level)")
     }
 
     func didGetError(error: NSError)
     {
-        if let errorDomain = ErrorDomain.fromRaw(error.domain)
-        {
-            switch errorDomain
-            {
-            case ErrorDomain.ConnectionError:
-                println(errorDomain.toRaw())
-                
-            case ErrorDomain.SetupError:
-                println(errorDomain.toRaw())
-                
-            case ErrorDomain.RuntimeError:
-                println(errorDomain.toRaw())
-            }
-        }
         // TODO: (YS) alert the user
-        println(error.localizedDescription)
+        println("Error: \(error.domain) - \(error.localizedDescription)")
         if let suggestion = error.localizedRecoverySuggestion {
-            println(suggestion)
+            println("Solution: " + suggestion)
         }
     }
 }

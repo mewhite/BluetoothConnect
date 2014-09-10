@@ -103,7 +103,7 @@ enum RuntimeErrorCodes: Int
 protocol PostureSenseDriverDelegate
 {
     func didChangeStatus(status: PostureSenseStatus)
-    func didReceiveData(data: NSData!)
+    func didReceiveData(posture: Posture)
     func didReceiveBatteryLevel(level: Int) // TODO: (YS) call this when reading battery level - both on connect, and in regular intervals
     func didGetError(error: NSError)
 }
@@ -115,18 +115,18 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     var myRealTimeControl: CBCharacteristic? = nil
     var myUnixTimeStamp: CBCharacteristic? = nil
 
-    var myPostureSenseDelegate: PostureSenseDriverDelegate? = nil
+    var myDelegate: PostureSenseDriverDelegate? = nil
     var myDecoder = PostureSenseDecoder()
 
     var myStatus : PostureSenseStatus = .PoweredOff {
         didSet {
-            myPostureSenseDelegate?.didChangeStatus(oldValue)
+            myDelegate?.didChangeStatus(oldValue)
         }
     }
     
     init(delegate: PostureSenseDriverDelegate)
     {
-        myPostureSenseDelegate = delegate
+        myDelegate = delegate
         super.init()
         myCentralManager = CBCentralManager(delegate:self, queue:dispatch_queue_create(nil, nil))
     }
@@ -175,7 +175,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 
         myStatus = nextStatus
         if let err = error {
-            myPostureSenseDelegate?.didGetError(err)
+            myDelegate?.didGetError(err)
         }
 
     }
@@ -211,7 +211,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didFailToConnectPeripheral peripheral: CBPeripheral!,
         error: NSError!)
     {
-        myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeConnectingToPeripheral.toRaw(), userInfo: error?.userInfo))
+        myDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeConnectingToPeripheral.toRaw(), userInfo: error?.userInfo))
     }
     
     //TODO: Implement this function in case it find many sensors. OR implement didDiscover peripheral to check that it's the correct one.
@@ -228,7 +228,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDiscoverServices error: NSError!)
     {
         if let err = error {
-            myPostureSenseDelegate?.didGetError(error)
+            myDelegate?.didGetError(error)
             return
         }
 
@@ -242,7 +242,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         if let err = error {
-            myPostureSenseDelegate?.didGetError(error)
+            myDelegate?.didGetError(error)
             return
         }
 
@@ -314,7 +314,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         if let err = error {
-            myPostureSenseDelegate?.didGetError(error)
+            myDelegate?.didGetError(error)
             return
         }
 
@@ -322,24 +322,28 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 
         if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
         {
+            let data = characteristic.value
             switch UUID {
-            case .BatteryLevel: return
+            case .BatteryLevel:
+                let level = myDecoder.decodeBatteryLevel(data)
+                myDelegate?.didReceiveBatteryLevel(level)
+
             case .SensorOffsets:
-                let sensorOffsets = characteristic.value
-                //TODO: pass data to decoder/delegate
+                myDecoder.setSensorOffsets(data)
+
             case .SensorCoeffs:
-                let sensorCoeffs = characteristic.value
-                //TODO: pass to decoder/delegate
+                myDecoder.setSensorCoefficients(data)
+
             case .AccelOffsets:
-                let accelOffsets = characteristic.value
-                //TODO: pass data to decoder/delegate
-            case .UnixTimeStamp: return
-            case .RealTimeControl: return
+                myDecoder.setAccelerometerOffsets(data)
+
             case .RealTimeData:
-                myPostureSenseDelegate?.didReceiveData(characteristic.value)
-            default: return
+                let posture = myDecoder.decodeRealTimeData(data)
+                myDelegate?.didReceiveData(posture)
+
+            default:
+                println("Received Unexpected Posture Characteristic: \(UUID.toRaw())")
             }
-            // TODO: (YS) after integrations with decoder - send vals to decoder and/or delegate
         }
 
     }
@@ -369,7 +373,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
        if let err = error {
-            myPostureSenseDelegate?.didGetError(NSError(
+            myDelegate?.didGetError(NSError(
                 domain: ErrorDomain.SetupError.toRaw(),
                 code: SetupErrorCodes.ErrorCodeUpdatingNotificationState.toRaw(),
                 userInfo: err.userInfo))
@@ -382,7 +386,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         if let err = error { // TODO: (YS) Should probably say "can't subscribe/unsucscribe to live updates" or something like that
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: err.userInfo))
+            myDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: err.userInfo))
         }
         else if myStatus == .Disengaging {
             myStatus = .Idle
@@ -419,7 +423,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         if let err = error {
-            myPostureSenseDelegate?.didGetError(NSError(
+            myDelegate?.didGetError(NSError(
                 domain: ErrorDomain.ConnectionError.toRaw(),
                 code: ConnectionErrorCodes.ErrorCodeUnexpectedDisconnect.toRaw(),
                 userInfo: err.userInfo))
