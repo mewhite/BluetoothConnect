@@ -289,10 +289,12 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        if (error)
+        if let err = error
         {
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeUpdatingCharacteristicValue.toRaw(), userInfo: nil))
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeUpdatingCharacteristicValue.toRaw(), userInfo: err.userInfo))
+            return
         }
+
         if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
         {
             switch UUID {
@@ -343,7 +345,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             myPostureSenseDelegate?.didGetError(NSError(
                 domain: ErrorDomain.SetupError.toRaw(),
                 code: SetupErrorCodes.ErrorCodeUpdatingNotificationState.toRaw(),
-                userInfo: nil))
+                userInfo: err.userInfo))
             println("Error changing notification state: \(err)")
         }
     }
@@ -352,9 +354,9 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didWriteValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        if (error)
+        if let err = error
         {
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: nil))
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: err.userInfo))
         }
     }
     
@@ -390,12 +392,12 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         myPostureSenseDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
-        if (error)
+        if let err = error
         {
             myPostureSenseDelegate?.didGetError(NSError(
                 domain: ErrorDomain.ConnectionError.toRaw(),
                 code: ConnectionErrorCodes.ErrorCodeUnexpectedDisconnect.toRaw(),
-                userInfo: nil))
+                userInfo: err.userInfo))
         }
     }
     
