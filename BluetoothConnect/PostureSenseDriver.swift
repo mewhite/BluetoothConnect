@@ -13,13 +13,11 @@ enum PostureSenseStatus {
     case PoweredOff
     case Searching
     case Connecting
-    case SettingUp
+    case SettingUp      // getting services and charecteristics before LiveUpdates
     case Disconnected
-    case Registering        //This will be relevant when making accounts, etc
     case LiveUpdates
-    case Idle               //When connected but not receiving LiveUpdates.
-    case Disengaging
-//Later, will add more states (viewing profile, etc)
+    case Idle           // connected but not receiving LiveUpdates
+    case Disengaging    // turning off LiveUpdates
 }
 
 /// Bluutooth service UUIDs
@@ -123,9 +121,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         case .PoweredOn:
             
             central.scanForPeripheralsWithServices(
-                [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw()),
-                CBUUID.UUIDWithString(ServiceUUID.DeviceInformation.toRaw()),
-                CBUUID.UUIDWithString(ServiceUUID.GenericAccessProfile.toRaw())],
+                [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw())],
                 options:nil)
             myPostureSenseDelegate?.didChangeStatus(.Searching)
         case .Unknown:

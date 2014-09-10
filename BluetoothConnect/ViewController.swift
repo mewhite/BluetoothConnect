@@ -40,7 +40,6 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
             case PostureSenseStatus.Connecting: println("Connecting") //connecting to peripheral/posture sensor
             case PostureSenseStatus.SettingUp: println("Setting Up") //finding/setting services/characteristics: real time control, initializing values, etc
             case PostureSenseStatus.Disconnected: println("Disconnected")
-            case PostureSenseStatus.Registering: println("Registering") //?
             case PostureSenseStatus.LiveUpdates: println("LiveUpdates") //receiving live data, ready to use, etc
             case PostureSenseStatus.Disengaging: println("Disengaging")
             case PostureSenseStatus.Idle: println("Idle")
