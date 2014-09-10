@@ -44,12 +44,6 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
             case PostureSenseStatus.LiveUpdates: println("LiveUpdates") //receiving live data, ready to use, etc
             case PostureSenseStatus.Disengaging: println("Disengaging")
             case PostureSenseStatus.Idle: println("Idle")
-
-            case PostureSenseStatus.Unknown: println("Unknown")
-            case PostureSenseStatus.Resetting: println("Resetting")
-            case PostureSenseStatus.Unauthorized: println("Unauthorized")
-            case PostureSenseStatus.Unsupported: println("Unsupported")
-            case PostureSenseStatus.PoweredOn: println("PoweredOn")
         }
     }
     func didReceiveData(data: NSData!)

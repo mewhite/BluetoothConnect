@@ -17,14 +17,9 @@ enum PostureSenseStatus {
     case Disconnected
     case Registering        //This will be relevant when making accounts, etc
     case LiveUpdates
-    case Idle
+    case Idle               //When connected but not receiving LiveUpdates.
     case Disengaging
-    
-    case Unknown
-    case Resetting
-    case Unauthorized
-    case Unsupported
-    case PoweredOn
+//Later, will add more states (viewing profile, etc)
 }
 
 /// Bluutooth service UUIDs
@@ -46,36 +41,6 @@ enum DeviceCharacteristicUUID : String
 }
 // TODO: (YS) read these on first time pairing
 
-///Error Domains and Codes
-enum ErrorDomain: String
-{
-    case ConnectionError    = "ConnectionError"
-    case SetupError         = "SetupError"
-    case RuntimeError       = "RuntimeError"
-    
-}
-enum ConnectionErrorCodes: Int
-{
-    case ErrorCodeConnectingToPeripheral        = 1
-    case ErrorCodeUnexpectedDisconnect          = 2
-    case ErrorCodeDiscoveringServices           = 3
-    case ErrorCodeDiscoveringCharacteristics    = 4
-    
-    
-}
-enum SetupErrorCodes: Int
-{
-    case ErrorCodeUpdatingNotificationState     = 1
-    
-
-}
-enum RuntimeErrorCodes: Int
-{
-    case ErrorCodeReceivingRealTimeData         = 1
-    case ErrorCodeUpdatingCharacteristicValue   = 2
-    case ErrorCodeSettingRealTimeControl        = 3
-}
-
 /// Characteristic UUIDs for Posture Sensor service
 enum PostureCharacteristicUUID : String
 {
@@ -88,15 +53,44 @@ enum PostureCharacteristicUUID : String
     case RealTimeData       = "D6E91941-1513-11E4-8C21-0800200C9A66"
 }
 
+///Error Domains and Codes
+enum ErrorDomain: String
+{
+    case ConnectionError    = "ConnectionError"
+    case SetupError         = "SetupError"
+    case RuntimeError       = "RuntimeError"
+}
+
+enum ConnectionErrorCodes: Int
+{
+    case ErrorCodeConnectingToPeripheral        = 1
+    case ErrorCodeUnexpectedDisconnect          = 2
+    case ErrorCodeDiscoveringServices           = 3
+    case ErrorCodeDiscoveringCharacteristics    = 4
+    case ErrorCodeUnidentifiedCentralState      = 5
+    case ErrorCodeResettingConnection           = 6
+    case ErrorCodeBluetoothUnsupported          = 7
+    case ErrorCodeBluetoothUnauthorized         = 8
+    case ErrorCodeBluetoothPoweredOff           = 9
+}
+
+enum SetupErrorCodes: Int
+{
+    case ErrorCodeUpdatingNotificationState     = 1
+}
+
+enum RuntimeErrorCodes: Int
+{
+    case ErrorCodeReceivingRealTimeData         = 1
+    case ErrorCodeUpdatingCharacteristicValue   = 2
+    case ErrorCodeSettingRealTimeControl        = 3
+    case ErrorCodeWritingCharacteristicValue    = 4
+}
 
 //Characteristics
 var batteryLevel: CBCharacteristic? = nil
-var sensorOffsets: CBCharacteristic? = nil
-var sensorCoeffs: CBCharacteristic? = nil
-var accelOffsets: CBCharacteristic? = nil
 var unixTimeStamp: CBCharacteristic? = nil
 var realTimeControl: CBCharacteristic? = nil
-var realTimeData: CBCharacteristic? = nil
 // TODO: (YS) no need for these global vars... Instead we need to get the NSData, decode it (using the decoder class), and pass it on to the delegate
 // TODO: QUESTION: (MW) Oh that makes sense for the sensor offsets/coeffs, etc, but what about the battery level, realTimecontrol (and TimeStamp?? Are we even using the timestamp yet?). How do we write to / read values of characteristics at will/as desired after initial setup. for realtime data we'll be updated when it changed, but for the other changing values?
 
@@ -127,24 +121,32 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         switch central.state {
             
         case .PoweredOn:
+            
             central.scanForPeripheralsWithServices(
                 [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw()),
                 CBUUID.UUIDWithString(ServiceUUID.DeviceInformation.toRaw()),
                 CBUUID.UUIDWithString(ServiceUUID.GenericAccessProfile.toRaw())],
                 options:nil)
             myPostureSenseDelegate?.didChangeStatus(.Searching)
+        case .Unknown:
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeUnidentifiedCentralState.toRaw(), userInfo: nil))
+        case .Resetting:
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeResettingConnection.toRaw(), userInfo: nil))
         case .Unsupported:
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothUnsupported.toRaw(), userInfo: nil))
             println("The platform does not support Bluetooth low energy.") // TODO: (YS) alert the delegate
             
         case .Unauthorized:
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothUnauthorized.toRaw(), userInfo: nil))
             println("The app is not authorized to use Bluetooth low energy") // TODO: (YS) alert the delegate
             
         case .PoweredOff:
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeBluetoothPoweredOff.toRaw(), userInfo: nil))
             println("Bluetooth is currently powered off.") // TODO: (YS) alert the delegate
             //TODO: state poweredOff
             
         default:
-            myPostureSenseDelegate?.didChangeStatus(.PoweredOff)
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeUnidentifiedCentralState.toRaw(), userInfo: nil))
         }
     }
     
@@ -171,7 +173,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         // TODO: (YS) in the first time, we need "Device Information" to decide which device to pair with. Afetr that we only need "Posture Sensor"
         // todo: QUESTION (MW) we don't need the Generic Access Profile? Is the local name not the identifier for which posture sensor it is?
         peripheral.discoverServices(nil)
-        println("Finding Services")
         myPostureSenseDelegate?.didChangeStatus(.SettingUp)
     }
     
@@ -180,14 +181,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         error: NSError!)
     {
         myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeConnectingToPeripheral.toRaw(), userInfo: nil))
-    }
-    
-    func centralManager(central: CBCentralManager!,
-        didDisconnectPeripheral peripheral: CBPeripheral!,
-        error: NSError!)
-    {
-        myPostureSenseDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
-        myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeUnexpectedDisconnect.toRaw(), userInfo: nil))
     }
     
     //TODO: Implement this function in case it find many sensors. OR implement didDiscover peripheral to check that it's the correct one.
@@ -218,19 +211,19 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             switch serviceUUID
                 {
             case .GenericAccessProfile:
-                println()
+                return
             case .DeviceInformation:
-                println()
+                setupDeviceInformation(peripheral, service: service)
+                return
             case .PostureSensor:
-                storePostureSensorCharacteristics(peripheral, service: service)
-                setUpPostureSense(peripheral)
+                setupPostureSensor(peripheral, service: service)
             default:
-                println()
+                return
             }
         }
     }
     
-    func storePostureSensorCharacteristics(peripheral: CBPeripheral!, service: CBService!)
+    func setupPostureSensor(peripheral: CBPeripheral!, service: CBService!)
     {
         // TODO: (YS) should treat different services seperately
         for characteristic in service.characteristics as [CBCharacteristic]
@@ -245,18 +238,12 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
                 case .SensorOffsets:
                     println("found sensor offsets")
                     peripheral.readValueForCharacteristic(characteristic)
-                    //TODO: pass data to decoder/delegate
-                    sensorOffsets = characteristic
                 case .SensorCoeffs:
                     println("found sensor coeffs")
                     peripheral.readValueForCharacteristic(characteristic)
-                    //TODO: pass to decoder/delegate
-                    sensorCoeffs = characteristic
                 case .AccelOffsets:
                     println("found accel offsets")
                     peripheral.readValueForCharacteristic(characteristic)
-                    //TODO: pass data to decoder/delegate
-                    accelOffsets = characteristic
                 case .UnixTimeStamp:
                     println("found time stamp")
                     unixTimeStamp = characteristic
@@ -265,15 +252,15 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
                     realTimeControl = characteristic
                 case .RealTimeData:
                     println("found real time data characteristic")
-                    realTimeData = characteristic
-                default: println()
+                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
+                default:
+                    return
                 }
-                // TODO: (YS) pass the characteristic.data to the decoder and/or the delegate
             }
         }
     }
 
-    func storeDeviceInformationCharacteristics(peripheral: CBPeripheral!, service: CBService!)
+    func setupDeviceInformation(peripheral: CBPeripheral!, service: CBService!)
     {
         // TODO: (YS) should treat different services seperately
         for characteristic in service.characteristics as [CBCharacteristic]
@@ -282,34 +269,51 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             {
                 switch UUID {
                 case .SystemID:
-                    println()
+                    return
                 case .ModelName:
-                    println()
+                    return
                 case .SerialNumber:
-                    println()
+                    return
                 case .FirmwareRevision:
-                    println()
+                    return
                 case .Manufacturer:
-                    println()
-                default: println()
+                    return
+                default: return
                 }
                 // TODO: (YS) pass the characteristic.data to the decoder and/or the delegate
             }
         }
     }
     
-    func setUpPostureSense(peripheral: CBPeripheral!)
+    func peripheral(peripheral: CBPeripheral!,
+        didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
+        error: NSError!)
     {
-        callibratePostureSense(peripheral)
-        peripheral.setNotifyValue(true, forCharacteristic: realTimeData)
-        turnOnRealTimeControl(peripheral)
-    }
-    
-    func callibratePostureSense(peripheral: CBPeripheral!)
-    {
-        peripheral.readValueForCharacteristic(sensorCoeffs)
-        peripheral.readValueForCharacteristic(sensorOffsets)
-        peripheral.readValueForCharacteristic(accelOffsets)
+        if (error)
+        {
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeUpdatingCharacteristicValue.toRaw(), userInfo: nil))
+        }
+        if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
+        {
+            switch UUID {
+            case .BatteryLevel: return
+            case .SensorOffsets:
+                let sensorOffsets = characteristic.value
+                //TODO: pass data to decoder/delegate
+            case .SensorCoeffs:
+                let sensorCoeffs = characteristic.value
+                //TODO: pass to decoder/delegate
+            case .AccelOffsets:
+                let accelOffsets = characteristic.value
+                //TODO: pass data to decoder/delegate
+            case .UnixTimeStamp: return
+            case .RealTimeControl: return
+            case .RealTimeData:
+                myPostureSenseDelegate?.didReceiveData(characteristic.value)
+            default: return
+            }
+            // TODO: (YS) after integrations with decoder - send vals to decoder and/or delegate
+        }
     }
     
     func turnOnRealTimeControl(peripheral: CBPeripheral!)
@@ -345,45 +349,54 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     }
     
     func peripheral(peripheral: CBPeripheral!,
-        didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
-        error: NSError!)
-    {
-        if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
-        {
-            switch UUID {
-            case .BatteryLevel: println()
-            case .SensorOffsets: println()
-            case .SensorCoeffs: println()
-            case .AccelOffsets: println()
-            case .UnixTimeStamp: println()
-            case .RealTimeControl: println()
-            case .RealTimeData:
-                myPostureSenseDelegate?.didReceiveData(characteristic.value)
-            default: println()
-            }
-            // TODO: (YS) after integrations with decoder - send vals to decoder and/or delegate
-        }
-    }
-    
-    func peripheral(peripheral: CBPeripheral!,
         didWriteValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        //NSLog("characteristic value writing")
-        //TODO: deal with writing error
+        if (error)
+        {
+            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: nil))
+        }
     }
     
     func disengagePostureSense()
     {
         myPostureSenseDelegate?.didChangeStatus(.Disengaging)
-        println("disengaging")
         turnOffRealTimeControl(myPeripheral)
     }
     
     func engagePostureSense()
     {
-        println("engaging")
         turnOnRealTimeControl(myPeripheral)
+    }
+    
+    //TODO: make a button to explicitly connect/search, not automatically
+    func connectToPostureSensor()
+    {
+        myCentralManager?.scanForPeripheralsWithServices(
+            [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw()),
+                CBUUID.UUIDWithString(ServiceUUID.DeviceInformation.toRaw()),
+                CBUUID.UUIDWithString(ServiceUUID.GenericAccessProfile.toRaw())],
+            options:nil)
+        myPostureSenseDelegate?.didChangeStatus(.Searching)
+    }
+    
+    func disconnectFromPostureSensor()
+    {
+        myCentralManager?.cancelPeripheralConnection(myPeripheral)
+    }
+    
+    func centralManager(central: CBCentralManager!,
+        didDisconnectPeripheral peripheral: CBPeripheral!,
+        error: NSError!)
+    {
+        myPostureSenseDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
+        if (error)
+        {
+            myPostureSenseDelegate?.didGetError(NSError(
+                domain: ErrorDomain.ConnectionError.toRaw(),
+                code: ConnectionErrorCodes.ErrorCodeUnexpectedDisconnect.toRaw(),
+                userInfo: nil))
+        }
     }
     
 }
