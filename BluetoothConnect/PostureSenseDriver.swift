@@ -204,6 +204,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         // todo: QUESTION (MW) we don't need the Generic Access Profile? Is the local name not the identifier for which posture sensor it is?
         // (YS) Right, the generic access is standard, and we don't need to query it here.
         peripheral.discoverServices(nil)
+        myStatus = .SettingUp // WORKAROUND: state not actually changed until next call!
         myStatus = .SettingUp
     }
     
