@@ -107,6 +107,12 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     var myCentralManager: CBCentralManager? = nil
     var myPeripheral: CBPeripheral? = nil
     var myPostureSenseDelegate: PostureSenseDriverDelegate? = nil
+
+    var myStatus : PostureSenseStatus = .PoweredOff {
+        didSet {
+            myPostureSenseDelegate?.didChangeStatus(oldValue)
+        }
+    }
     
     init(delegate: PostureSenseDriverDelegate)
     {
@@ -119,13 +125,13 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func centralManagerDidUpdateState(central: CBCentralManager!)
     {
-        var status = PostureSenseStatus.PoweredOff
+        var nextStatus = PostureSenseStatus.PoweredOff
         var error : NSError? = nil
 
         switch central.state {
             
         case .PoweredOn:
-            status = .Searching
+            nextStatus = .Searching
             central.scanForPeripheralsWithServices(
                 [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw())],
                 options:nil)
@@ -157,7 +163,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             )
         }
 
-        myPostureSenseDelegate?.didChangeStatus(status)
+        myStatus = nextStatus
         if let err = error {
             myPostureSenseDelegate?.didGetError(err)
         }
@@ -174,7 +180,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         self.myPeripheral = peripheral
         // TODO: (YS) maybe should set self as delegate here?  self.myPeripheral.delegate = self
         myCentralManager!.connectPeripheral(peripheral, options: nil)
-        myPostureSenseDelegate?.didChangeStatus(.Connecting)
+        myStatus = .Connecting
         
         // TODO: (YS) save the peripheral.identifier if this is the first time, and check against it in future activations - can use NSUserDefaults
     }
@@ -187,14 +193,14 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         // TODO: (YS) in the first time, we need "Device Information" to decide which device to pair with. Afetr that we only need "Posture Sensor"
         // todo: QUESTION (MW) we don't need the Generic Access Profile? Is the local name not the identifier for which posture sensor it is?
         peripheral.discoverServices(nil)
-        myPostureSenseDelegate?.didChangeStatus(.SettingUp)
+        myStatus = .SettingUp
     }
     
     func centralManager(central: CBCentralManager!,
         didFailToConnectPeripheral peripheral: CBPeripheral!,
         error: NSError!)
     {
-        myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeConnectingToPeripheral.toRaw(), userInfo: nil))
+        myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.ConnectionError.toRaw(), code: ConnectionErrorCodes.ErrorCodeConnectingToPeripheral.toRaw(), userInfo: error?.userInfo))
     }
     
     //TODO: Implement this function in case it find many sensors. OR implement didDiscover peripheral to check that it's the correct one.
@@ -210,6 +216,11 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     func peripheral(peripheral: CBPeripheral!,
         didDiscoverServices error: NSError!)
     {
+        if let err = error {
+            myPostureSenseDelegate?.didGetError(error)
+            return
+        }
+
         for service in peripheral.services as [CBService]
         {
             peripheral.discoverCharacteristics(nil, forService: service)
@@ -220,34 +231,36 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDiscoverCharacteristicsForService service: CBService!,
         error: NSError!)
     {
+        if let err = error {
+            myPostureSenseDelegate?.didGetError(error)
+            return
+        }
+
         if let serviceUUID = ServiceUUID.fromRaw(service.UUID.UUIDString)
         {
-            switch serviceUUID
-                {
+            switch serviceUUID {
             case .GenericAccessProfile:
                 return
+
             case .DeviceInformation:
                 setupDeviceInformation(peripheral, service: service)
-                return
+
             case .PostureSensor:
                 setupPostureSensor(peripheral, service: service)
-            default:
-                return
             }
         }
     }
     
     func setupPostureSensor(peripheral: CBPeripheral!, service: CBService!)
     {
-        // TODO: (YS) should treat different services seperately
         for characteristic in service.characteristics as [CBCharacteristic]
         {
             if let UUID = PostureCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
             {
                 switch UUID {
+                    // TODO: (YS) pass the characteristic.data to the decoder and/or the delegate
                 case .BatteryLevel:
                     println("found battery level")
-                    batteryLevel = characteristic
                     peripheral.readValueForCharacteristic(characteristic)
                 case .SensorOffsets:
                     println("found sensor offsets")
@@ -276,7 +289,6 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 
     func setupDeviceInformation(peripheral: CBPeripheral!, service: CBService!)
     {
-        // TODO: (YS) should treat different services seperately
         for characteristic in service.characteristics as [CBCharacteristic]
         {
             if let UUID = DeviceCharacteristicUUID.fromRaw(characteristic.UUID.UUIDString)
@@ -303,9 +315,8 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didUpdateValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        if let err = error
-        {
-            myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeUpdatingCharacteristicValue.toRaw(), userInfo: err.userInfo))
+        if let err = error {
+            myPostureSenseDelegate?.didGetError(error)
             return
         }
 
@@ -334,21 +345,22 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func turnOnRealTimeControl(peripheral: CBPeripheral!)
     {
+        // TODO: (YS) ensure peripheral is not nil and is connected
         var onByte = [UInt8] (count: 1, repeatedValue: 1)
         let RealTimeControl_ON = NSData(bytes: &onByte, length: 1)
         peripheral.writeValue(RealTimeControl_ON, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
-        myPostureSenseDelegate?.didChangeStatus(.LiveUpdates)
+        myStatus = .LiveUpdates
     }
     
     //Real Time Control turned off to stop receiving data from sensor.
     //  Notification State remains on, but no data is communicated because real time control is off.
     func turnOffRealTimeControl(peripheral: CBPeripheral!)
     {
+        // TODO: (YS) ensure peripheral is not nil and is connected
         var offByte = [UInt8] (count: 1, repeatedValue: 0)
         let RealTimeControl_OFF = NSData(bytes: &offByte, length: 1)
         peripheral.writeValue(RealTimeControl_OFF, forCharacteristic: realTimeControl, type: CBCharacteristicWriteType.WithResponse)
-        myPostureSenseDelegate?.didChangeStatus(.Idle)
-    }
+   }
     
     //Only purpose of this function is for error checking
     func peripheral(peripheral: CBPeripheral!,
@@ -368,15 +380,17 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didWriteValueForCharacteristic characteristic: CBCharacteristic!,
         error: NSError!)
     {
-        if let err = error
-        {
+        if let err = error { // TODO: (YS) Should probably say "can't subscribe/unsucscribe to live updates" or something like that
             myPostureSenseDelegate?.didGetError(NSError(domain: ErrorDomain.RuntimeError.toRaw(), code: RuntimeErrorCodes.ErrorCodeWritingCharacteristicValue.toRaw(), userInfo: err.userInfo))
+        }
+        else if myStatus == .Disengaging {
+            myStatus = .Idle
         }
     }
     
     func disengagePostureSense()
     {
-        myPostureSenseDelegate?.didChangeStatus(.Disengaging)
+        myStatus = .Disengaging
         turnOffRealTimeControl(myPeripheral)
     }
     
@@ -389,11 +403,9 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     func connectToPostureSensor()
     {
         myCentralManager?.scanForPeripheralsWithServices(
-            [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw()),
-                CBUUID.UUIDWithString(ServiceUUID.DeviceInformation.toRaw()),
-                CBUUID.UUIDWithString(ServiceUUID.GenericAccessProfile.toRaw())],
+            [CBUUID.UUIDWithString(ServiceUUID.PostureSensor.toRaw())],
             options:nil)
-        myPostureSenseDelegate?.didChangeStatus(.Searching)
+        myStatus = .Searching
     }
     
     func disconnectFromPostureSensor()
@@ -405,13 +417,14 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         didDisconnectPeripheral peripheral: CBPeripheral!,
         error: NSError!)
     {
-        myPostureSenseDelegate?.didChangeStatus(PostureSenseStatus.Disconnected)
-        if let err = error
-        {
+        if let err = error {
             myPostureSenseDelegate?.didGetError(NSError(
                 domain: ErrorDomain.ConnectionError.toRaw(),
                 code: ConnectionErrorCodes.ErrorCodeUnexpectedDisconnect.toRaw(),
                 userInfo: err.userInfo))
+        }
+        else {
+            myStatus = .Disconnected
         }
     }
     
