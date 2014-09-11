@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import QuartzCore
 
 /// Sensor angle in radians, 0 is streight, positive is bending forward
 typealias FlexAngle = Float
@@ -22,8 +23,7 @@ let theAccelerometersCount = 2
 :angles: array of sensor FlexAngle numbered from bottom to top
 :attitudes: array of accelerometer `Acceleration` numbered from bottom to top
 */
-struct Posture : Printable
-{
+struct Posture : Printable {
     var angles = [FlexAngle] (count: theSensorsCount, repeatedValue: 0)
     var attitudes = [Acceleration] (count: theAccelerometersCount, repeatedValue: (256, 0, 0))
     
@@ -33,52 +33,54 @@ struct Posture : Printable
 }
 // TODO: move Posture to a general project header
 
-class PostureCurveView: UIView
-{
+class PostureCurveView: UIView {
+    var myPosture: Posture = Posture() {
+        didSet {
+            
+        }
+    }
+
+    var myCurve: CAShapeLayer = CAShapeLayer()
+    var myBezier: UIBezierPath = UIBezierPath(ovalInRect: CGRectMake(30, 30, 40, 40))
     
-    required init(coder: NSCoder!)
-    {
+    required init(coder: NSCoder!) {
         super.init(coder: coder)
         setUpView()
     }
-    
-    override init(frame: CGRect)
-    {
+
+    override init(frame: CGRect) {
         super.init(frame: frame)
         setUpView()
     }
     
-    override init()
-    {
+    override init() {
         //super.init(frame: UIScreen.mainScreen().bounds)
         //super.init(frame: UIScreen.mainScreen().bounds)
-        super.init(frame: frame)
+        super.init(frame: UIScreen.mainScreen().bounds)
         setUpView()
     }
     
     
-    func setUpView()
-    {
+    func setUpView() {
+        myBezier.stroke()
+        myCurve.path = myBezier.CGPath
+        self.layer.addSublayer(myCurve)
         self.backgroundColor = UIColor.blueColor()
     }
     
-    func angleChange(angle1: Int, angle2: Int, angle3: Int, angle4: Int, angle5: Int)
-    {
+    /*
+    func angleChange(angle1: Int, angle2: Int, angle3: Int, angle4: Int, angle5: Int) {
         self.drawRect(CGRectMake(CGFloat.convertFromIntegerLiteral(angle1),
             CGFloat.convertFromIntegerLiteral(angle2),
             CGFloat.convertFromIntegerLiteral(angle3),
             CGFloat.convertFromIntegerLiteral(angle4)))
     }
+    */
     
-    func accelChange()
-    {
+    func accelChange() {
         
     }
-    
-    func updatePosture()
-    {
-        var myPosture = Posture()
-    }
+
     
     
     
