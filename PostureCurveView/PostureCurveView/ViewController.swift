@@ -22,9 +22,10 @@ class ViewController: UIViewController {
     @IBOutlet weak var accel1: UITextField!
     @IBOutlet weak var accel2: UITextField!
     
-    @IBAction func angleDidChange(sender: AnyObject)
-    {
+    @IBAction func angleDidChange(sender: AnyObject) {
+        /*
         myPostureCurveView.angleChange(angle1.text.toInt()!, angle2: angle2.text.toInt()!, angle3: angle3.text.toInt()!, angle4: angle4.text.toInt()!, angle5: angle5.text.toInt()!)
+    */
     }
     
     override func viewDidLoad() {
@@ -35,8 +36,7 @@ class ViewController: UIViewController {
         
     }
     
-    func setupView()
-    {
+    func setupView() {
         view.addSubview(myPostureCurveView)
         
     }
