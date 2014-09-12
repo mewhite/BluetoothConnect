@@ -343,7 +343,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
                 myDelegate?.didReceiveData(posture)
 
             default:
-                println("Received Unexpected Posture Characteristic: \(UUID.toRaw())")
+                trace("Received Unexpected Posture Characteristic: \(UUID.toRaw())")
             }
         }
 
@@ -378,7 +378,7 @@ class PostureSenseDriver: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
                 domain: ErrorDomain.SetupError.toRaw(),
                 code: SetupErrorCodes.ErrorCodeUpdatingNotificationState.toRaw(),
                 userInfo: err.userInfo))
-            println("Error changing notification state: \(err)")
+            trace("Error changing notification state: \(err)")
         }
     }
     

@@ -12,6 +12,7 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
     var myPostureSenseDriver: PostureSenseDriver? = nil
     @IBOutlet var disengageButton : UIButton!
     @IBOutlet var engageButton : UIButton!
+
     override func viewDidLoad()
     {
         super.viewDidLoad()
@@ -19,35 +20,39 @@ class ViewController: UIViewController, PostureSenseDriverDelegate {
         myPostureSenseDriver = PostureSenseDriver(delegate: self)
     }
     @IBAction func deviceDisengaged(sender : AnyObject) {
-        println("disengage device")
+        trace("disengage device")
         myPostureSenseDriver?.disengagePostureSense()
     }
     @IBAction func deviceEngaged(sender : AnyObject) {
-        println("engage device")
+        trace("engage device")
         myPostureSenseDriver?.engagePostureSense()
     }
     func didChangeStatus(status: PostureSenseStatus)
     {
-        println("Driver status: \(status)")
+        trace("Driver status: \(status)")
     }
     
     func didReceiveData(posture: Posture)
     {
-        println("Live posture: \(posture)")
+        trace("Live posture: \(posture)")
     }
 
     func didReceiveBatteryLevel(level: Int)
     {
         // TODO: (YS) update battery view
-        println("battery level: \(level)")
+        trace("battery level: \(level)")
     }
 
     func didGetError(error: NSError)
     {
         // TODO: (YS) alert the user
-        println("Error: \(error.domain) - \(error.localizedDescription)")
+        trace("Error: \(error.domain) - \(error.localizedDescription)")
         if let suggestion = error.localizedRecoverySuggestion {
-            println("Solution: " + suggestion)
+            trace("Solution: " + suggestion)
         }
+    }
+
+    @IBAction func crash() {
+        Analytics.crash()
     }
 }

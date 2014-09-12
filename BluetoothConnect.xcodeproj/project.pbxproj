@@ -12,6 +12,9 @@
 		2A4C38CA199D557F00FB3F6E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38C8199D557F00FB3F6E /* Main.storyboard */; };
 		2A4C38CC199D557F00FB3F6E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A4C38CB199D557F00FB3F6E /* Images.xcassets */; };
 		2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */; };
+		DC62847E19C1B0B700DD05B4 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC62847D19C1B0B700DD05B4 /* Crashlytics.framework */; };
+		DC62848319C2EF7600DD05B4 /* Analytics.m in Sources */ = {isa = PBXBuildFile; fileRef = DC62848219C2EF7600DD05B4 /* Analytics.m */; };
+		DC62848719C3123100DD05B4 /* Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC62848619C3123100DD05B4 /* Analytics.swift */; };
 		DCBE4D7E19C06BDC00A45D95 /* PostureDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7C19C06BDC00A45D95 /* PostureDecoderTests.swift */; };
 		DCBE4D8019C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */; };
 		DCBE4D8119C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */; };
@@ -37,6 +40,11 @@
 		2A4C38D1199D557F00FB3F6E /* BluetoothConnectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothConnectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A4C38D6199D557F00FB3F6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2ACF315F19B63F3800BF8203 /* PostureSenseDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = PostureSenseDriver.swift; sourceTree = "<group>"; };
+		DC62847D19C1B0B700DD05B4 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
+		DC62848019C2EF7400DD05B4 /* BluetoothConnect-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BluetoothConnect-Bridging-Header.h"; sourceTree = "<group>"; };
+		DC62848219C2EF7600DD05B4 /* Analytics.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Analytics.m; sourceTree = "<group>"; };
+		DC62848519C2F1F100DD05B4 /* Analytics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Analytics.h; sourceTree = "<group>"; };
+		DC62848619C3123100DD05B4 /* Analytics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Analytics.swift; sourceTree = "<group>"; };
 		DCBE4D7C19C06BDC00A45D95 /* PostureDecoderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureDecoderTests.swift; sourceTree = "<group>"; };
 		DCBE4D7F19C06C0300A45D95 /* PostureSenseDecoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostureSenseDecoder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -46,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC62847E19C1B0B700DD05B4 /* Crashlytics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,8 +71,13 @@
 		2A4C38B6199D557F00FB3F6E = {
 			isa = PBXGroup;
 			children = (
+				DC62848219C2EF7600DD05B4 /* Analytics.m */,
+				DC62848519C2F1F100DD05B4 /* Analytics.h */,
+				DC62848619C3123100DD05B4 /* Analytics.swift */,
+				DC62848019C2EF7400DD05B4 /* BluetoothConnect-Bridging-Header.h */,
 				2A4C38C1199D557F00FB3F6E /* BluetoothConnect */,
 				2A4C38D4199D557F00FB3F6E /* BluetoothConnectTests */,
+				DC62847F19C1B13600DD05B4 /* Frameworks */,
 				2A4C38C0199D557F00FB3F6E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -116,6 +130,14 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		DC62847F19C1B13600DD05B4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DC62847D19C1B0B700DD05B4 /* Crashlytics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -126,6 +148,7 @@
 				2A4C38BB199D557F00FB3F6E /* Sources */,
 				2A4C38BC199D557F00FB3F6E /* Frameworks */,
 				2A4C38BD199D557F00FB3F6E /* Resources */,
+				DC62847C19C1B02A00DD05B4 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -211,12 +234,30 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		DC62847C19C1B02A00DD05B4 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "./Crashlytics.framework/run ecff7b477672f6daf735d4a810593b62cc70e111 67bef91734826c5aaab5f19737fddc64e373042f94589ecdb34e61de8904e057";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2A4C38BB199D557F00FB3F6E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				2A4C38C7199D557F00FB3F6E /* ViewController.swift in Sources */,
+				DC62848319C2EF7600DD05B4 /* Analytics.m in Sources */,
+				DC62848719C3123100DD05B4 /* Analytics.swift in Sources */,
 				DCBE4D8019C06C0300A45D95 /* PostureSenseDecoder.swift in Sources */,
 				2A4C38C5199D557F00FB3F6E /* AppDelegate.swift in Sources */,
 				2ACF316019B63F3800BF8203 /* PostureSenseDriver.swift in Sources */,
@@ -336,13 +377,20 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = BluetoothConnect/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "BluetoothConnect-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -352,13 +400,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = BluetoothConnect/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "BluetoothConnect-Bridging-Header.h";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -367,6 +421,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -378,6 +433,8 @@
 				INFOPLIST_FILE = BluetoothConnectTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "BluetoothConnectTests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BluetoothConnect.app/BluetoothConnect";
 			};
 			name = Debug;
@@ -386,6 +443,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -393,6 +451,7 @@
 				INFOPLIST_FILE = BluetoothConnectTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "BluetoothConnectTests-Bridging-Header.h";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BluetoothConnect.app/BluetoothConnect";
 			};
 			name = Release;

@@ -79,7 +79,7 @@ class PostureSenseDecoder
     func decodeBatteryLevel(raw1Byte : NSData) -> Int
     {
         if raw1Byte.length != 1 {
-            println("Warning: Battery level is \(raw1Byte.length) bytes instead of 1")
+            trace("Warning: Battery level is \(raw1Byte.length) bytes instead of 1")
             return 0
         }
         var level = [UInt8](count: 1, repeatedValue: 0)
@@ -101,7 +101,7 @@ class PostureSenseDecoder
         for i in 0 ..< theAccelerometersCount {
             let location = sensorDataLength + 4*i
             if location > raw20bytes.length - 4 {
-                println("Warning: RT data is only \(raw20bytes.length) bytes instead of 20")
+                trace("Warning: RT data is only \(raw20bytes.length) bytes instead of 20")
                 break
             }
             raw20bytes.getBytes(&accelWord, range: NSRange(location: location, length: 4))
